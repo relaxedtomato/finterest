@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interest Calculator</title>
+    <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.5;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #f0f0f0;
+        }
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #0070f3;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #0051a2;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+        const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } = Recharts;
+
+        function InterestCalculator() {
+            const [initialInvestment, setInitialInvestment] = useState(20000);
+            const [annualContribution, setAnnualContribution] = useState(5000);
+            const [interestRate, setInterestRate] = useState(5);
+            const [years, setYears] = useState(5);
+            const [compoundFrequency, setCompoundFrequency] = useState("annually");
+            const [results, setResults] = useState(null);
+            const [isTableOpen, setIsTableOpen] = useState(false);
+
+            const calculateInterest = () => {
+                let balance = initialInvestment;
+                let totalContributions = initialInvestment;
+                let yearlyData = [];
+
+                const rate = interestRate / 100;
+                const compoundsPerYear = compoundFrequency === "annually" ? 1 : 12;
+
+                for (let year = 1; year <= years; year++) {
+                    const startBalance = balance;
+                    for (let i = 0; i < compoundsPerYear; i++) {
+                        balance *= (1 + rate / compoundsPerYear);
+                        if (i === 0) balance += annualContribution;
+                    }
+                    totalContributions += annualContribution;
+                    const yearInterest = balance - startBalance - annualContribution;
+                    yearlyData.push({
+                        year,
+                        startBalance: Math.round(startBalance),
+                        contribution: Math.round(annualContribution),
+                        interest: Math.round(yearInterest),
+                        endBalance: Math.round(balance),
+                        totalContributions: Math.round(totalContributions),
+                        totalInterest: Math.round(balance - totalContributions)
+                    });
+                }
+
+                setResults({
+                    endingBalance: Math.round(balance),
+                    totalContributions: Math.round(totalContributions),
+                    totalInterest: Math.round(balance - totalContributions),
+                    yearlyData
+                });
+            };
+
+            const chartColors = {
+                principle: "#4A4A4A",
+                contributions: "#6B8EB8",
+                interest: "#B86B6B"
+            };
+
+            return (
+                <div className="card">
+                    <h1>Interest Calculator</h1>
+                    <p>Calculate compound interest over time</p>
+                    
+                    <div>
+                        <label htmlFor="initialInvestment">Initial Investment ($)</label>
+                        <input
+                            id="initialInvestment"
+                            type="number"
+                            value={initialInvestment}
+                            onChange={(e) => setInitialInvestment(Number(e.target.value))}
+                        />
+                    </div>
+                    
+                    <div>
+                        <label htmlFor="annualContribution">Annual Contribution ($)</label>
+                        <input
+                            id="annualContribution"
+                            type="number"
+                            value={annualContribution}
+                            onChange={(e) => setAnnualContribution(Number(e.target.value))}
+                        />
+                    </div>
+                    
+                    <div>
+                        <label htmlFor="interestRate">Interest Rate (%)</label>
+                        <input
+                            id="interestRate"
+                            type="number"
+                            value={interestRate}
+                            onChange={(e) => setInterestRate(Number(e.target.value))}
+                        />
+                    </div>
+                    
+                    <div>
+                        <label htmlFor="years">Investment Length (Years)</label>
+                        <input
+                            id="years"
+                            type="number"
+                            value={years}
+                            onChange={(e) => setYears(Number(e.target.value))}
+                        />
+                    </div>
+                    
+                    <div>
+                        <label htmlFor="compoundFrequency">Compound Frequency</label>
+                        <select
+                            id="compoundFrequency"
+                            value={compoundFrequency}
+                            onChange={(e) => setCompoundFrequency(e.target.value)}
+                        >
+                            <option value="annually">Annually</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                    </div>
+                    
+                    <button onClick={calculateInterest}>Calculate</button>
+                    
+                    {results && (
+                        <div>
+                            <h2>Results</h2>
+                            <div>
+                                <p>Ending Balance: ${results.endingBalance.toLocaleString()}</p>
+                                <p>Total Contributions: ${results.totalContributions.toLocaleString()}</p>
+                                <p>Total Interest: ${results.totalInterest.toLocaleString()}</p>
+                            </div>
+                            
+                            <h3>Growth Over Time</h3>
+                            <BarChart width={600} height={300} data={results.yearlyData}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="year" />
+                                <YAxis />
+                                <Tooltip />
+                                <Legend />
+                                <Bar dataKey="startBalance" name="Principle" stackId="a" fill={chartColors.principle} />
+                                <Bar dataKey="contribution" name="Contributions" stackId="a" fill={chartColors.contributions} />
+                                <Bar dataKey="interest" name="Interest" stackId="a" fill={chartColors.interest} />
+                            </BarChart>
+                            
+                            <h3>Yearly Breakdown</h3>
+                            <button onClick={() => setIsTableOpen(!isTableOpen)}>
+                                {isTableOpen ? "Hide Details" : "Show Details"}
+                            </button>
+                            
+                            {isTableOpen && (
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Year</th>
+                                            <th>Starting Balance</th>
+                                            <th>Contribution</th>
+                                            <th>Interest</th>
+                                            <th>Ending Balance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {results.yearlyData.map((year) => (
+                                            <tr key={year.year}>
+                                                <td>{year.year}</td>
+                                                <td>${year.startBalance.toLocaleString()}</td>
+                                                <td>${year.contribution.toLocaleString()}</td>
+                                                <td>${year.interest.toLocaleString()}</td>
+                                                <td>${year.endBalance.toLocaleString()}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<InterestCalculator />, document.getElementById('root'));
+    </script>
+</body>
+</html>
